@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Did My Vote Matter?</title>
+  <meta name="description" content="Find out whether your presidential vote mattered — state outcome, Electoral College impact, and the bigger picture. Elections 1980–2024.">
+  <meta property="og:title" content="Did My Vote Matter?">
+  <meta property="og:description" content="Enter your state, year, and candidate to see how your vote fit into the result.">
+  <meta property="og:type" content="website">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --bg2: #f5f4f1;
+      --bg3: #efede8;
+      --text: #1a1a18;
+      --text2: #5a5955;
+      --text3: #9a9893;
+      --border: rgba(0,0,0,0.1);
+      --border2: rgba(0,0,0,0.18);
+      --radius: 8px;
+      --radius-lg: 12px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1a;
+        --bg2: #262624;
+        --bg3: #2f2f2c;
+        --text: #f0ede8;
+        --text2: #a8a5a0;
+        --text3: #6a6865;
+        --border: rgba(255,255,255,0.1);
+        --border2: rgba(255,255,255,0.18);
+      }
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg3);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .page { max-width: 660px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+    /* Hero */
+    .hero { text-align: center; padding: 2.5rem 0 2rem; }
+    .hero h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.5px; color: var(--text); }
+    .hero p { font-size: 14px; color: var(--text2); margin-top: 8px; line-height: 1.65; max-width: 380px; margin-left: auto; margin-right: auto; }
+
+    /* Card */
+    .card {
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .fl { display: flex; flex-direction: column; gap: 5px; }
+    .fl label { font-size: 12px; color: var(--text2); font-weight: 500; letter-spacing: 0.2px; }
+
+    select {
+      height: 40px;
+      padding: 0 10px;
+      border-radius: var(--radius);
+      border: 0.5px solid var(--border2);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 14px;
+      font-family: var(--font);
+      width: 100%;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      cursor: pointer;
+    }
+    select:focus { outline: none; border-color: #378ADD; }
+
+    .vote-label { font-size: 12px; color: var(--text2); font-weight: 500; letter-spacing: 0.2px; margin-bottom: 6px; }
+    .vote-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .vbtn {
+      height: 50px;
+      border-radius: var(--radius);
+      border: 1.5px solid var(--border2);
+      background: var(--bg2);
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      width: 100%;
+      transition: all 0.12s;
+    }
+    .vbtn:hover { color: var(--text); border-color: var(--border2); background: var(--bg3); }
+    #bd.sel { background: #185FA5; border-color: #185FA5; color: #fff; }
+    #br.sel { background: #993C1D; border-color: #993C1D; color: #fff; }
+    #bo.sel { background: #444441; border-color: #444441; color: #fff; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    #bd .dot { background: #85B7EB; } #br .dot { background: #F0997B; } #bo .dot { background: #888780; }
+    #bd.sel .dot, #br.sel .dot, #bo.sel .dot { background: rgba(255,255,255,0.5); }
+
+    .btn-submit {
+      width: 100%; height: 42px;
+      background: var(--text); color: var(--bg);
+      border: none; border-radius: var(--radius);
+      font-size: 14px; font-weight: 500;
+      cursor: pointer; font-family: var(--font);
+      transition: opacity 0.12s;
+    }
+    .btn-submit:hover { opacity: 0.85; }
+
+    /* Results */
+    #res { display: none; }
+
+    .vwrap { border-radius: var(--radius-lg); border: 0.5px solid var(--border); overflow: hidden; margin-bottom: 1rem; }
+    .vh { padding: 1.1rem 1.4rem; display: flex; align-items: flex-start; gap: 12px; }
+    .vh.g { background: #EAF3DE; border-bottom: 0.5px solid #C0DD97; }
+    .vh.a { background: #FAEEDA; border-bottom: 0.5px solid #FAC775; }
+    .vh.r { background: #FAECE7; border-bottom: 0.5px solid #F5C4B3; }
+    .vh.n { background: var(--bg2); border-bottom: 0.5px solid var(--border); }
+    .vicon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .vicon.g { background: #3B6D11; color: #EAF3DE; }
+    .vicon.a { background: #854F0B; color: #FAEEDA; }
+    .vicon.r { background: #993C1D; color: #FAECE7; }
+    .vicon.n { background: #888780; color: #fff; }
+    .vtitle { font-size: 16px; font-weight: 500; line-height: 1.3; }
+    .vtitle.g { color: #27500A; } .vtitle.a { color: #633806; } .vtitle.r { color: #712B13; } .vtitle.n { color: var(--text); }
+    .vsub { font-size: 13px; margin-top: 4px; line-height: 1.5; }
+    .vsub.g { color: #3B6D11; } .vsub.a { color: #854F0B; } .vsub.r { color: #993C1D; } .vsub.n { color: var(--text2); }
+    .vbody { padding: 1rem 1.2rem; background: var(--bg); }
+
+    .chain { display: flex; flex-direction: column; gap: 7px; margin-bottom: 1rem; }
+    .crow { border-radius: var(--radius); padding: 10px 12px; font-size: 13px; line-height: 1.6; display: flex; gap: 9px; align-items: flex-start; }
+    .crow.pos { background: #EAF3DE; color: #27500A; }
+    .crow.neg { background: #FAECE7; color: #712B13; }
+    .crow.neu { background: var(--bg2); color: var(--text2); }
+    .crow.cau { background: #FAEEDA; color: #633806; }
+    .ci { font-size: 13px; flex-shrink: 0; font-style: normal; }
+    .crow b { font-weight: 600; }
+
+    .verdict-banner { border-radius: var(--radius); padding: 16px 18px; margin-bottom: 1rem; text-align: center; }
+    .verdict-banner.win { background: #EAF3DE; border: 0.5px solid #C0DD97; }
+    .verdict-banner.loss { background: #FAECE7; border: 0.5px solid #F5C4B3; }
+    .verdict-banner.draw { background: #FAEEDA; border: 0.5px solid #FAC775; }
+    .verdict-banner.none { background: var(--bg2); border: 0.5px solid var(--border); }
+    .verdict-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .verdict-label.win { color: #3B6D11; } .verdict-label.loss { color: #993C1D; } .verdict-label.draw { color: #854F0B; } .verdict-label.none { color: var(--text3); }
+    .verdict-text { font-size: 24px; font-weight: 600; line-height: 1.2; }
+    .verdict-text.win { color: #27500A; } .verdict-text.loss { color: #712B13; } .verdict-text.draw { color: #633806; } .verdict-text.none { color: var(--text2); }
+
+    .sgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 1rem; }
+    .sc { background: var(--bg2); border-radius: var(--radius); padding: 9px 11px; }
+    .sl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; }
+    .sv { font-size: 16px; font-weight: 600; color: var(--text); }
+    .ss { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+    .bwrap { margin: 0.6rem 0; }
+    .blabels { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+    .btrack { height: 7px; background: var(--bg2); border-radius: 4px; overflow: hidden; display: flex; }
+    .seg-d { background: #378ADD; height: 100%; } .seg-o { background: #B4B2A9; height: 100%; } .seg-r { background: #D85A30; height: 100%; }
+    .pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-top: 5px; }
+    .pill.d { background: #B5D4F4; color: #0C447C; } .pill.r { background: #F5C4B3; color: #993C1D; }
+
+    .ncrd { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.2rem; margin-bottom: 1rem; }
+    .stitle { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .ecbar { display: flex; height: 26px; border-radius: 4px; overflow: hidden; margin-bottom: 5px; }
+    .ecd { background: #378ADD; color: #E6F1FB; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+    .ecr { background: #D85A30; color: #FAECE7; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+    .ecrow { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-top: 4px; }
+    .divider { height: 0.5px; background: var(--border); margin: 0.8rem 0; }
+
+    .dyk { border-radius: var(--radius-lg); border: 0.5px solid var(--border); overflow: hidden; margin-bottom: 1rem; }
+    .dykhd { padding: 9px 14px; display: flex; align-items: center; gap: 8px; background: var(--bg2); border-bottom: 0.5px solid var(--border); }
+    .dykeb { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); }
+    .dyktag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-left: auto; }
+    .tf { background: #EEEDFE; color: #3C3489; } .tw { background: #FAEEDA; color: #633806; } .tc { background: #FAECE7; color: #712B13; }
+    .twa { background: #EAF3DE; color: #27500A; } .tv { background: #E6F1FB; color: #0C447C; } .ts { background: #F1EFE8; color: #444441; } .tm { background: #FBEAF0; color: #72243E; }
+    .dykbd { padding: 1rem 1.2rem; background: var(--bg); }
+    .dykq { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.5; margin-bottom: 7px; }
+    .dykt { font-size: 13px; color: var(--text2); line-height: 1.65; margin-bottom: 7px; }
+    .dykt b { font-weight: 600; color: var(--text); }
+    .dyksrc { font-size: 11px; color: var(--text3); font-style: italic; border-top: 0.5px solid var(--border); padding-top: 7px; }
+
+    .note { font-size: 11px; color: var(--text3); text-align: center; margin-top: 0.75rem; line-height: 1.7; }
+    .note a { color: var(--text2); text-decoration: underline; text-underline-offset: 2px; }
+
+    footer { text-align: center; padding: 2rem 1rem 1rem; font-size: 12px; color: var(--text3); }
+
+    @media (max-width: 480px) {
+      .form-row { grid-template-columns: 1fr; }
+      .vote-row { grid-template-columns: 1fr; }
+      .sgrid { grid-template-columns: 1fr 1fr; }
+      .sgrid .sc:last-child { grid-column: span 2; }
+      .hero h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+  <div class="hero">
+    <h1>Did my vote matter?</h1>
+    <p>Select your state, year, and candidate to see how your vote fit into the result — and the bigger picture.</p>
+  </div>
+
+  <div class="card">
+    <div class="form-row">
+      <div class="fl">
+        <label for="st">State</label>
+        <select id="st">
+          <option value="">Select state...</option>
+          <option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>District of Columbia</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option>
+        </select>
+      </div>
+      <div class="fl">
+        <label for="yr">Election year</label>
+        <select id="yr">
+          <option value="">Select year...</option>
+          <option>2024</option><option>2020</option><option>2016</option><option>2012</option><option>2008</option><option>2004</option><option>2000</option><option>1996</option><option>1992</option><option>1988</option><option>1984</option><option>1980</option>
+        </select>
+      </div>
+    </div>
+    <div class="vote-label">I voted for</div>
+    <div class="vote-row">
+      <button class="vbtn" id="bd" onclick="sv('dem')"><span class="dot"></span><span id="dl">Democrat</span></button>
+      <button class="vbtn" id="br" onclick="sv('rep')"><span class="dot"></span><span id="rl">Republican</span></button>
+      <button class="vbtn" id="bo" onclick="sv('oth')"><span class="dot"></span>Other / didn't</button>
+    </div>
+    <button class="btn-submit" onclick="go()">Analyze my vote</button>
+  </div>
+
+  <div id="res">
+    <div class="vwrap">
+      <div class="vh" id="vh">
+        <div class="vicon" id="vi"></div>
+        <div><div class="vtitle" id="vt"></div><div class="vsub" id="vs"></div></div>
+      </div>
+      <div class="vbody" id="vb"></div>
+    </div>
+    <div class="ncrd" id="nc"></div>
+    <div class="dyk" id="dyk"></div>
+    <p class="note">
+      Data: <a href="https://electionlab.mit.edu/data" target="_blank" rel="noopener">MIT Election Data and Science Lab</a> ·
+      <a href="https://www.ballotwire.com" target="_blank" rel="noopener">BallotWire</a> · State returns 1980–2024
+    </p>
+  </div>
+</div>
+
+<footer>
+  Built with public election data · Not affiliated with any party or campaign
+</footer>
+
+<script>
+const D={
+2024:{dN:"Harris",rN:"Trump",dEV:226,rEV:312,nat:{d:74998043,r:77284118,t:155893418},s:{Alabama:{d:720742,r:1425048,t:2157282,w:"R",ev:9},Alaska:{d:140026,r:180309,t:332614,w:"R",ev:3},Arizona:{d:1595390,r:1770893,t:3480896,w:"R",ev:11},Arkansas:{d:374486,r:768152,t:1172726,w:"R",ev:6},California:{d:10011952,r:6347511,t:17000000,w:"D",ev:54},Colorado:{d:1467670,r:1232350,t:2850000,w:"D",ev:10},Connecticut:{d:983778,r:770148,t:1800000,w:"D",ev:7},Delaware:{d:279440,r:211882,t:510000,w:"D",ev:3},"District of Columbia":{d:265540,r:19749,t:299000,w:"D",ev:3},Florida:{d:4657966,r:6101034,t:11200000,w:"R",ev:30},Georgia:{d:2544354,r:2756109,t:5400000,w:"R",ev:16},Hawaii:{d:330781,r:196864,t:550000,w:"D",ev:4},Idaho:{d:228784,r:591813,t:860000,w:"R",ev:4},Illinois:{d:3214616,r:2512539,t:5900000,w:"D",ev:19},Indiana:{d:1073847,r:1581554,t:2800000,w:"R",ev:11},Iowa:{d:729638,r:998148,t:1780000,w:"R",ev:6},Kansas:{d:473768,r:788771,t:1310000,w:"R",ev:6},Kentucky:{d:681732,r:1375782,t:2110000,w:"R",ev:8},Louisiana:{d:684657,r:1191698,t:1950000,w:"R",ev:8},Maine:{d:399118,r:373614,t:810000,w:"D",ev:4},Maryland:{d:1816655,r:1002616,t:2960000,w:"D",ev:10},Massachusetts:{d:2157826,r:1360255,t:3700000,w:"D",ev:11},Michigan:{d:2715036,r:2864887,t:5770000,w:"R",ev:15},Minnesota:{d:1614590,r:1557710,t:3300000,w:"D",ev:10},Mississippi:{d:394590,r:765502,t:1200000,w:"R",ev:6},Missouri:{d:948829,r:1678439,t:2780000,w:"R",ev:10},Montana:{d:218762,r:366696,t:615000,w:"R",ev:4},Nebraska:{d:372028,r:592904,t:1010000,w:"R",ev:5},Nevada:{d:703486,r:774068,t:1560000,w:"R",ev:6},"New Hampshire":{d:424937,r:407289,t:861000,w:"D",ev:4},"New Jersey":{d:2217378,r:2137997,t:4510000,w:"D",ev:14},"New Mexico":{d:497820,r:412756,t:960000,w:"D",ev:5},"New York":{d:4264952,r:3640756,t:8200000,w:"D",ev:28},"North Carolina":{d:2684292,r:2875012,t:5760000,w:"R",ev:16},"North Dakota":{d:98280,r:235028,t:353000,w:"R",ev:3},Ohio:{d:2453440,r:3216855,t:5900000,w:"R",ev:17},Oklahoma:{d:391498,r:977571,t:1420000,w:"R",ev:7},Oregon:{d:990685,r:810810,t:1880000,w:"D",ev:8},Pennsylvania:{d:3388124,r:3505695,t:7100000,w:"R",ev:19},"Rhode Island":{d:298298,r:204027,t:530000,w:"D",ev:4},"South Carolina":{d:831714,r:1265918,t:2180000,w:"R",ev:9},"South Dakota":{d:150545,r:269032,t:435000,w:"R",ev:3},Tennessee:{d:828818,r:1773906,t:2720000,w:"R",ev:11},Texas:{d:4919452,r:7222916,t:13020000,w:"R",ev:40},Utah:{d:541838,r:783307,t:1440000,w:"R",ev:6},Vermont:{d:222561,r:121287,t:370000,w:"D",ev:3},Virginia:{d:2450298,r:2206669,t:4840000,w:"D",ev:13},Washington:{d:2137929,r:1790490,t:4170000,w:"D",ev:12},"West Virginia":{d:183148,r:452031,t:658000,w:"R",ev:4},Wisconsin:{d:1666414,r:1705028,t:3480000,w:"R",ev:10},Wyoming:{d:60003,r:195203,t:265000,w:"R",ev:3}}},
+2020:{dN:"Biden",rN:"Trump",dEV:306,rEV:232,nat:{d:81268924,r:74216154,t:158429631},s:{Alabama:{d:849624,r:1441170,t:2323282,w:"R",ev:9},Alaska:{d:153778,r:189951,t:359530,w:"R",ev:3},Arizona:{d:1672143,r:1661686,t:3387326,w:"D",ev:11},Arkansas:{d:423932,r:760647,t:1219069,w:"R",ev:6},California:{d:11110250,r:6006518,t:17500881,w:"D",ev:54},Colorado:{d:1804352,r:1364607,t:3256980,w:"D",ev:10},Connecticut:{d:1080831,r:714717,t:1823912,w:"D",ev:7},Delaware:{d:296268,r:200603,t:504010,w:"D",ev:3},"District of Columbia":{d:317323,r:18586,t:344356,w:"D",ev:3},Florida:{d:5297045,r:5668731,t:11067456,w:"R",ev:29},Georgia:{d:2473633,r:2461854,t:4999960,w:"D",ev:16},Hawaii:{d:366130,r:196864,t:574469,w:"D",ev:4},Idaho:{d:287021,r:554119,t:868014,w:"R",ev:4},Illinois:{d:3471915,r:2446891,t:6033744,w:"D",ev:20},Indiana:{d:1242416,r:1729519,t:3033935,w:"R",ev:11},Iowa:{d:759061,r:897672,t:1690871,w:"R",ev:6},Kansas:{d:570323,r:771406,t:1372634,w:"R",ev:6},Kentucky:{d:772474,r:1326646,t:2136768,w:"R",ev:8},Louisiana:{d:856034,r:1255776,t:2148062,w:"R",ev:8},Maine:{d:435072,r:360737,t:819461,w:"D",ev:4},Maryland:{d:1985023,r:976414,t:3037030,w:"D",ev:10},Massachusetts:{d:2382202,r:1167202,t:3631402,w:"D",ev:11},Michigan:{d:2804040,r:2649852,t:5539302,w:"D",ev:16},Minnesota:{d:1717077,r:1484065,t:3277171,w:"D",ev:10},Mississippi:{d:539398,r:756764,t:1313759,w:"R",ev:6},Missouri:{d:1253014,r:1718736,t:3025962,w:"R",ev:10},Montana:{d:244786,r:343602,t:603674,w:"R",ev:3},Nebraska:{d:374583,r:556846,t:956383,w:"R",ev:5},Nevada:{d:703486,r:669890,t:1405376,w:"D",ev:6},"New Hampshire":{d:424937,r:365660,t:806205,w:"D",ev:4},"New Jersey":{d:2608400,r:1883313,t:4549665,w:"D",ev:14},"New Mexico":{d:501614,r:401894,t:923965,w:"D",ev:5},"New York":{d:5230985,r:3251997,t:8641395,w:"D",ev:29},"North Carolina":{d:2684292,r:2758775,t:5524804,w:"R",ev:15},"North Dakota":{d:114902,r:235595,t:361819,w:"R",ev:3},Ohio:{d:2679165,r:3154834,t:5922202,w:"R",ev:18},Oklahoma:{d:503890,r:1020280,t:1560699,w:"R",ev:7},Oregon:{d:1340383,r:958448,t:2374321,w:"D",ev:7},Pennsylvania:{d:3458229,r:3377674,t:6915283,w:"D",ev:20},"Rhode Island":{d:307486,r:199922,t:514889,w:"D",ev:4},"South Carolina":{d:1091541,r:1385894,t:2513329,w:"R",ev:9},"South Dakota":{d:150471,r:261043,t:422609,w:"R",ev:3},Tennessee:{d:1143711,r:1852475,t:3053851,w:"R",ev:11},Texas:{d:5259126,r:5890347,t:11315056,w:"R",ev:38},Utah:{d:560282,r:865140,t:1488289,w:"R",ev:6},Vermont:{d:242820,r:112704,t:367428,w:"D",ev:3},Virginia:{d:2413568,r:1962430,t:4460524,w:"D",ev:13},Washington:{d:2369612,r:1584651,t:4087631,w:"D",ev:12},"West Virginia":{d:235984,r:545382,t:794731,w:"R",ev:5},Wisconsin:{d:1630866,r:1610184,t:3298041,w:"D",ev:10},Wyoming:{d:73491,r:193559,t:276765,w:"R",ev:3}}},
+2016:{dN:"Clinton",rN:"Trump",dEV:227,rEV:304,nat:{d:65853514,r:62984828,t:136669276},s:{Alabama:{d:729547,r:1318255,t:2123372,w:"R",ev:9},Alaska:{d:116454,r:163387,t:318608,w:"R",ev:3},Arizona:{d:1161167,r:1252401,t:2573165,w:"R",ev:11},Arkansas:{d:380494,r:684872,t:1130635,w:"R",ev:6},California:{d:8753788,r:4483810,t:14610509,w:"D",ev:55},Colorado:{d:1338870,r:1202484,t:2780220,w:"D",ev:9},Connecticut:{d:897572,r:673215,t:1644920,w:"D",ev:7},Delaware:{d:235603,r:185127,t:443814,w:"D",ev:3},"District of Columbia":{d:282830,r:12723,t:311268,w:"D",ev:3},Florida:{d:4504975,r:4617886,t:9420039,w:"R",ev:29},Georgia:{d:1877963,r:2089104,t:4114732,w:"R",ev:16},Hawaii:{d:266891,r:128847,t:428937,w:"D",ev:4},Idaho:{d:189765,r:409055,t:690255,w:"R",ev:4},Illinois:{d:3090729,r:2146015,t:5536424,w:"D",ev:20},Indiana:{d:1033126,r:1557286,t:2734958,w:"R",ev:11},Iowa:{d:653669,r:800983,t:1566031,w:"R",ev:6},Kansas:{d:427005,r:671018,t:1184402,w:"R",ev:6},Kentucky:{d:628854,r:1202971,t:1924149,w:"R",ev:8},Louisiana:{d:780154,r:1178638,t:2029032,w:"R",ev:8},Maine:{d:357735,r:335593,t:747927,w:"D",ev:4},Maryland:{d:1677928,r:943169,t:2781446,w:"D",ev:10},Massachusetts:{d:1995196,r:1090893,t:3325046,w:"D",ev:11},Michigan:{d:2268839,r:2279543,t:4799284,w:"R",ev:16},Minnesota:{d:1367716,r:1322951,t:2944813,w:"D",ev:10},Mississippi:{d:485131,r:700714,t:1209357,w:"R",ev:6},Missouri:{d:1071068,r:1594511,t:2808605,w:"R",ev:10},Montana:{d:177709,r:279240,t:497147,w:"R",ev:3},Nebraska:{d:284494,r:495961,t:844227,w:"R",ev:5},Nevada:{d:539260,r:512058,t:1125385,w:"D",ev:6},"New Hampshire":{d:348526,r:345790,t:744296,w:"D",ev:4},"New Jersey":{d:2148278,r:1601933,t:3874046,w:"D",ev:14},"New Mexico":{d:385234,r:319667,t:798319,w:"D",ev:5},"New York":{d:4556124,r:2819533,t:7721453,w:"D",ev:29},"North Carolina":{d:2189316,r:2362631,t:4741564,w:"R",ev:15},"North Dakota":{d:93758,r:216794,t:344360,w:"R",ev:3},Ohio:{d:2394164,r:2841005,t:5496487,w:"R",ev:18},Oklahoma:{d:420375,r:949136,t:1452992,w:"R",ev:7},Oregon:{d:1002106,r:782403,t:1789270,w:"D",ev:7},Pennsylvania:{d:2926441,r:2970733,t:6165478,w:"R",ev:20},"Rhode Island":{d:252525,r:180543,t:464144,w:"D",ev:4},"South Carolina":{d:855373,r:1155389,t:2103027,w:"R",ev:9},"South Dakota":{d:117458,r:227721,t:370093,w:"R",ev:3},Tennessee:{d:870695,r:1522925,t:2508027,w:"R",ev:11},Texas:{d:3877868,r:4685047,t:8969226,w:"R",ev:38},Utah:{d:310676,r:515231,t:1131430,w:"R",ev:6},Vermont:{d:178573,r:95369,t:315067,w:"D",ev:3},Virginia:{d:1981473,r:1769443,t:3984631,w:"D",ev:13},Washington:{d:1742718,r:1221747,t:3317019,w:"D",ev:12},"West Virginia":{d:188794,r:489371,t:713051,w:"R",ev:5},Wisconsin:{d:1382536,r:1405284,t:2976150,w:"R",ev:10},Wyoming:{d:55973,r:174419,t:255849,w:"R",ev:3}}},
+2012:{dN:"Obama",rN:"Romney",dEV:332,rEV:206,nat:{d:65915795,r:60933504,t:128839194},s:{Alabama:{d:795696,r:1255925,t:2074338,w:"R",ev:9},Alaska:{d:122640,r:164676,t:300495,w:"R",ev:3},Arizona:{d:1025232,r:1233654,t:2323579,w:"R",ev:11},Arkansas:{d:394409,r:647744,t:1069468,w:"R",ev:6},California:{d:7854285,r:4839958,t:13038547,w:"D",ev:55},Colorado:{d:1323102,r:1185243,t:2569521,w:"D",ev:9},Connecticut:{d:905083,r:634892,t:1558960,w:"D",ev:7},Delaware:{d:242584,r:165484,t:413921,w:"D",ev:3},"District of Columbia":{d:267070,r:21381,t:293764,w:"D",ev:3},Florida:{d:4237756,r:4163447,t:8474179,w:"D",ev:29},Georgia:{d:1773827,r:2078688,t:3900050,w:"R",ev:16},Hawaii:{d:306658,r:121015,t:437033,w:"D",ev:4},Idaho:{d:212787,r:420911,t:652274,w:"R",ev:4},Illinois:{d:3019512,r:2135216,t:5242014,w:"D",ev:20},Indiana:{d:1152887,r:1420543,t:2624534,w:"R",ev:11},Iowa:{d:822544,r:730617,t:1582180,w:"D",ev:6},Kansas:{d:440726,r:692634,t:1159971,w:"R",ev:6},Kentucky:{d:679370,r:1087190,t:1797212,w:"R",ev:8},Louisiana:{d:809141,r:1152262,t:1994065,w:"R",ev:8},Maine:{d:401306,r:292276,t:713180,w:"D",ev:4},Maryland:{d:1677844,r:971869,t:2707327,w:"D",ev:10},Massachusetts:{d:1921290,r:1188314,t:3167767,w:"D",ev:11},Michigan:{d:2564569,r:2115256,t:4730961,w:"D",ev:16},Minnesota:{d:1546167,r:1320225,t:2936369,w:"D",ev:10},Mississippi:{d:562949,r:710746,t:1285584,w:"R",ev:6},Missouri:{d:1223796,r:1482440,t:2757323,w:"R",ev:10},Montana:{d:201839,r:267928,t:484048,w:"R",ev:3},Nebraska:{d:302081,r:475064,t:794379,w:"R",ev:5},Nevada:{d:531373,r:463567,t:1014918,w:"D",ev:6},"New Hampshire":{d:369561,r:329918,t:710972,w:"D",ev:4},"New Jersey":{d:2125101,r:1477568,t:3640292,w:"D",ev:14},"New Mexico":{d:415335,r:335788,t:783758,w:"D",ev:5},"New York":{d:4485741,r:2490431,t:7083508,w:"D",ev:29},"North Carolina":{d:2178391,r:2270395,t:4505372,w:"R",ev:15},"North Dakota":{d:124827,r:188163,t:320746,w:"R",ev:3},Ohio:{d:2827709,r:2661407,t:5580822,w:"D",ev:18},Oklahoma:{d:443547,r:891325,t:1334872,w:"R",ev:7},Oregon:{d:970488,r:754175,t:1789270,w:"D",ev:7},Pennsylvania:{d:2990274,r:2680434,t:5753670,w:"D",ev:20},"Rhode Island":{d:279677,r:157204,t:446049,w:"D",ev:4},"South Carolina":{d:865941,r:1071645,t:1964118,w:"R",ev:9},"South Dakota":{d:145039,r:210610,t:363815,w:"R",ev:3},Tennessee:{d:960709,r:1462330,t:2458577,w:"R",ev:11},Texas:{d:3308124,r:4569843,t:7993851,w:"R",ev:38},Utah:{d:251813,r:740600,t:1017440,w:"R",ev:6},Vermont:{d:199239,r:92698,t:299290,w:"D",ev:3},Virginia:{d:1971820,r:1822522,t:3854489,w:"D",ev:13},Washington:{d:1755396,r:1290670,t:3276040,w:"D",ev:12},"West Virginia":{d:238269,r:417655,t:670438,w:"R",ev:5},Wisconsin:{d:1620985,r:1407966,t:3071434,w:"D",ev:10},Wyoming:{d:69286,r:170962,t:247160,w:"R",ev:3}}},
+2008:{dN:"Obama",rN:"McCain",dEV:365,rEV:173,nat:{d:69498516,r:59948323,t:131313820},s:{Alabama:{d:813479,r:1266546,t:2099819,w:"R",ev:9},Alaska:{d:123594,r:193841,t:326197,w:"R",ev:3},Arizona:{d:1034707,r:1230111,t:2293475,w:"R",ev:10},Arkansas:{d:422310,r:638017,t:1086617,w:"R",ev:6},California:{d:8274473,r:5011781,t:13743177,w:"D",ev:55},Colorado:{d:1288576,r:1073589,t:2401245,w:"D",ev:9},Connecticut:{d:997772,r:629428,t:1646797,w:"D",ev:7},Delaware:{d:255459,r:152374,t:412412,w:"D",ev:3},"District of Columbia":{d:245800,r:17367,t:265853,w:"D",ev:3},Florida:{d:4282074,r:4045624,t:8390744,w:"D",ev:27},Georgia:{d:1844123,r:2048759,t:3924486,w:"R",ev:15},Hawaii:{d:325871,r:120566,t:453568,w:"D",ev:4},Idaho:{d:236440,r:403012,t:655032,w:"R",ev:4},Illinois:{d:3419348,r:2031179,t:5522371,w:"D",ev:21},Indiana:{d:1374039,r:1345648,t:2751054,w:"D",ev:11},Iowa:{d:828940,r:682379,t:1537123,w:"D",ev:7},Kansas:{d:514765,r:699655,t:1235872,w:"R",ev:6},Kentucky:{d:751985,r:1048462,t:1826620,w:"R",ev:8},Louisiana:{d:782989,r:1148275,t:1960761,w:"R",ev:9},Maine:{d:421923,r:295273,t:731163,w:"D",ev:4},Maryland:{d:1629467,r:959862,t:2631596,w:"D",ev:10},Massachusetts:{d:1904097,r:1108854,t:3080985,w:"D",ev:12},Michigan:{d:2872579,r:2048639,t:5001766,w:"D",ev:17},Minnesota:{d:1573354,r:1275409,t:2910369,w:"D",ev:10},Mississippi:{d:554662,r:724597,t:1289865,w:"R",ev:6},Missouri:{d:1441911,r:1445814,t:2925205,w:"R",ev:11},Montana:{d:231667,r:242763,t:490302,w:"R",ev:3},Nebraska:{d:333319,r:452979,t:801281,w:"R",ev:5},Nevada:{d:533736,r:412827,t:967848,w:"D",ev:5},"New Hampshire":{d:384826,r:316534,t:710970,w:"D",ev:4},"New Jersey":{d:2215422,r:1613207,t:3868237,w:"D",ev:15},"New Mexico":{d:472422,r:346832,t:830158,w:"D",ev:5},"New York":{d:4804945,r:2752771,t:7640931,w:"D",ev:31},"North Carolina":{d:2142651,r:2128474,t:4310789,w:"D",ev:15},"North Dakota":{d:141278,r:168601,t:316621,w:"R",ev:3},Ohio:{d:2940044,r:2677820,t:5708350,w:"D",ev:20},Oklahoma:{d:502496,r:960165,t:1462661,w:"R",ev:7},Oregon:{d:1037291,r:738475,t:1827864,w:"D",ev:7},Pennsylvania:{d:3276363,r:2655885,t:6013272,w:"D",ev:21},"Rhode Island":{d:296571,r:165391,t:471766,w:"D",ev:4},"South Carolina":{d:862449,r:1034896,t:1920969,w:"R",ev:8},"South Dakota":{d:170924,r:203054,t:381975,w:"R",ev:3},Tennessee:{d:1087437,r:1479178,t:2599749,w:"R",ev:11},Texas:{d:3528633,r:4479328,t:8077795,w:"R",ev:34},Utah:{d:327670,r:596030,t:952370,w:"R",ev:5},Vermont:{d:219262,r:98974,t:325046,w:"D",ev:3},Virginia:{d:1959532,r:1725005,t:3723260,w:"D",ev:13},Washington:{d:1750848,r:1229216,t:3036380,w:"D",ev:11},"West Virginia":{d:303857,r:397466,t:713310,w:"R",ev:5},Wisconsin:{d:1677211,r:1262393,t:2983417,w:"D",ev:10},Wyoming:{d:82868,r:164958,t:254658,w:"R",ev:3}}},
+2004:{dN:"Kerry",rN:"Bush",dEV:251,rEV:286,nat:{d:59028444,r:62040610,t:122295345},s:{Alabama:{d:693933,r:1176394,t:1883449,w:"R",ev:9},Alaska:{d:111025,r:190889,t:312598,w:"R",ev:3},Arizona:{d:893524,r:1104294,t:2012585,w:"R",ev:10},Arkansas:{d:469953,r:572898,t:1054945,w:"R",ev:6},California:{d:6745485,r:5509826,t:12589683,w:"D",ev:55},Colorado:{d:1001732,r:1101255,t:2130330,w:"R",ev:9},Connecticut:{d:857488,r:693826,t:1578769,w:"D",ev:7},Delaware:{d:200152,r:171660,t:375190,w:"D",ev:3},"District of Columbia":{d:202970,r:21256,t:227586,w:"D",ev:3},Florida:{d:3583544,r:3964522,t:7609810,w:"R",ev:27},Georgia:{d:1366149,r:1914254,t:3301875,w:"R",ev:15},Hawaii:{d:231708,r:194191,t:429013,w:"D",ev:4},Idaho:{d:181098,r:409235,t:598447,w:"R",ev:4},Illinois:{d:2891550,r:2345946,t:5274322,w:"D",ev:21},Indiana:{d:969011,r:1479438,t:2468002,w:"R",ev:11},Iowa:{d:741898,r:751957,t:1506908,w:"R",ev:7},Kansas:{d:434993,r:736456,t:1187756,w:"R",ev:6},Kentucky:{d:712733,r:1069439,t:1795882,w:"R",ev:8},Louisiana:{d:820299,r:1102169,t:1943106,w:"R",ev:9},Maine:{d:396842,r:330201,t:740752,w:"D",ev:4},Maryland:{d:1334493,r:1024703,t:2386678,w:"D",ev:10},Massachusetts:{d:1803800,r:1071109,t:2912388,w:"D",ev:12},Michigan:{d:2479183,r:2313746,t:4839252,w:"D",ev:17},Minnesota:{d:1445014,r:1346695,t:2828387,w:"D",ev:10},Mississippi:{d:458094,r:684981,t:1152145,w:"R",ev:6},Missouri:{d:1259171,r:1455713,t:2731364,w:"R",ev:11},Montana:{d:173710,r:266063,t:450445,w:"R",ev:3},Nebraska:{d:254328,r:512814,t:778186,w:"R",ev:5},Nevada:{d:397190,r:418690,t:829587,w:"R",ev:5},"New Hampshire":{d:340511,r:331237,t:677738,w:"D",ev:4},"New Jersey":{d:1911430,r:1670003,t:3611691,w:"D",ev:15},"New Mexico":{d:370942,r:376930,t:756304,w:"R",ev:5},"New York":{d:4314280,r:2962567,t:7391036,w:"D",ev:31},"North Carolina":{d:1525849,r:1961166,t:3501007,w:"R",ev:15},"North Dakota":{d:111052,r:196651,t:312833,w:"R",ev:3},Ohio:{d:2741165,r:2858727,t:5627908,w:"R",ev:20},Oklahoma:{d:503966,r:959792,t:1463758,w:"R",ev:7},Oregon:{d:943163,r:866831,t:1836782,w:"D",ev:7},Pennsylvania:{d:2938095,r:2793847,t:5769590,w:"D",ev:21},"Rhode Island":{d:259760,r:169046,t:437134,w:"D",ev:4},"South Carolina":{d:661699,r:937974,t:1617730,w:"R",ev:8},"South Dakota":{d:149244,r:232584,t:388215,w:"R",ev:3},Tennessee:{d:1036477,r:1384375,t:2437319,w:"R",ev:11},Texas:{d:2832704,r:4526917,t:7410749,w:"R",ev:34},Utah:{d:241199,r:663742,t:927844,w:"R",ev:5},Vermont:{d:184067,r:121180,t:312309,w:"D",ev:3},Virginia:{d:1454742,r:1716959,t:3198367,w:"R",ev:13},Washington:{d:1510201,r:1304894,t:2859084,w:"D",ev:11},"West Virginia":{d:326541,r:423778,t:755887,w:"R",ev:5},Wisconsin:{d:1489504,r:1478120,t:2997007,w:"D",ev:10},Wyoming:{d:70776,r:167629,t:243428,w:"R",ev:3}}},
+2000:{dN:"Gore",rN:"Bush",dEV:266,rEV:271,nat:{d:50999897,r:50456002,t:105405100},s:{Alabama:{d:692611,r:941173,t:1666272,w:"R",ev:9},Alaska:{d:79004,r:167398,t:285560,w:"R",ev:3},Arizona:{d:685341,r:781652,t:1532016,w:"R",ev:8},Arkansas:{d:422768,r:472940,t:921781,w:"R",ev:6},California:{d:5861203,r:4567429,t:10965856,w:"D",ev:54},Colorado:{d:738227,r:883745,t:1741368,w:"R",ev:8},Connecticut:{d:816015,r:561094,t:1459525,w:"D",ev:8},Delaware:{d:180068,r:137288,t:327622,w:"D",ev:3},"District of Columbia":{d:171923,r:18073,t:201894,w:"D",ev:3},Florida:{d:2912253,r:2912790,t:6138765,w:"R",ev:25},Georgia:{d:1116230,r:1419720,t:2596645,w:"R",ev:13},Hawaii:{d:205286,r:137845,t:367951,w:"D",ev:4},Idaho:{d:138637,r:336937,t:501621,w:"R",ev:4},Illinois:{d:2589026,r:2019421,t:4742123,w:"D",ev:22},Indiana:{d:901980,r:1245836,t:2199302,w:"R",ev:12},Iowa:{d:638517,r:634373,t:1315563,w:"D",ev:7},Kansas:{d:399276,r:622332,t:1072218,w:"R",ev:6},Kentucky:{d:638898,r:872492,t:1544187,w:"R",ev:8},Louisiana:{d:792344,r:927871,t:1765656,w:"R",ev:9},Maine:{d:319951,r:286616,t:651817,w:"D",ev:4},Maryland:{d:1145782,r:813797,t:2020480,w:"D",ev:10},Massachusetts:{d:1616487,r:878502,t:2702984,w:"D",ev:12},Michigan:{d:2170418,r:1953139,t:4232711,w:"D",ev:18},Minnesota:{d:1168266,r:1109659,t:2438685,w:"D",ev:10},Mississippi:{d:404614,r:572844,t:994184,w:"R",ev:7},Missouri:{d:1111138,r:1189924,t:2359892,w:"R",ev:11},Montana:{d:137126,r:240178,t:410997,w:"R",ev:3},Nebraska:{d:231780,r:433862,t:697019,w:"R",ev:5},Nevada:{d:279978,r:301575,t:608970,w:"R",ev:4},"New Hampshire":{d:266348,r:273559,t:569081,w:"R",ev:4},"New Jersey":{d:1788850,r:1284173,t:3187226,w:"D",ev:15},"New Mexico":{d:286783,r:286417,t:598605,w:"D",ev:5},"New York":{d:4107697,r:2403374,t:6821999,w:"D",ev:33},"North Carolina":{d:1257692,r:1631163,t:2911262,w:"R",ev:14},"North Dakota":{d:95284,r:174852,t:288256,w:"R",ev:3},Ohio:{d:2186190,r:2350363,t:4701998,w:"R",ev:21},Oklahoma:{d:474276,r:744337,t:1234229,w:"R",ev:8},Oregon:{d:720342,r:713577,t:1533968,w:"D",ev:7},Pennsylvania:{d:2485967,r:2281127,t:4913119,w:"D",ev:23},"Rhode Island":{d:249508,r:130555,t:409435,w:"D",ev:4},"South Carolina":{d:565561,r:786892,t:1382717,w:"R",ev:8},"South Dakota":{d:118804,r:190700,t:316269,w:"R",ev:3},Tennessee:{d:981720,r:1061949,t:2076181,w:"R",ev:11},Texas:{d:2433746,r:3799639,t:6407637,w:"R",ev:32},Utah:{d:203053,r:515096,t:770754,w:"R",ev:5},Vermont:{d:149022,r:119775,t:294308,w:"D",ev:3},Virginia:{d:1217290,r:1437490,t:2739447,w:"R",ev:13},Washington:{d:1247652,r:1108864,t:2487433,w:"D",ev:11},"West Virginia":{d:295497,r:336475,t:648124,w:"R",ev:5},Wisconsin:{d:1242987,r:1237279,t:2598607,w:"D",ev:11},Wyoming:{d:60481,r:147947,t:218351,w:"R",ev:3}}},
+1996:{dN:"Clinton",rN:"Dole",dEV:379,rEV:159,nat:{d:47401185,r:39197469,t:96277872},s:{Alabama:{d:662165,r:769044,t:1534349,w:"R",ev:9},Alaska:{d:80380,r:122746,t:241620,w:"R",ev:3},Arizona:{d:653288,r:622073,t:1404405,w:"D",ev:8},Arkansas:{d:475171,r:325416,t:884262,w:"D",ev:6},California:{d:5119835,r:3828380,t:10019484,w:"D",ev:54},Colorado:{d:671152,r:691848,t:1510704,w:"R",ev:8},Connecticut:{d:735740,r:483109,t:1392614,w:"D",ev:8},Delaware:{d:140355,r:99062,t:270459,w:"D",ev:3},"District of Columbia":{d:158220,r:17339,t:185586,w:"D",ev:3},Florida:{d:2546870,r:2244536,t:5303794,w:"D",ev:25},Georgia:{d:1053849,r:1080843,t:2299071,w:"R",ev:13},Hawaii:{d:205012,r:113943,t:360120,w:"D",ev:4},Idaho:{d:165443,r:256595,t:491719,w:"R",ev:4},Illinois:{d:2341744,r:1587021,t:4311391,w:"D",ev:22},Indiana:{d:887424,r:1006693,t:2135842,w:"R",ev:12},Iowa:{d:620258,r:492644,t:1234075,w:"D",ev:7},Kansas:{d:387659,r:583245,t:1074300,w:"R",ev:6},Kentucky:{d:636614,r:623283,t:1388708,w:"D",ev:8},Louisiana:{d:927837,r:712586,t:1783959,w:"D",ev:9},Maine:{d:312788,r:186378,t:605897,w:"D",ev:4},Maryland:{d:966207,r:681530,t:1780870,w:"D",ev:10},Massachusetts:{d:1571763,r:718107,t:2556459,w:"D",ev:12},Michigan:{d:1989653,r:1481212,t:3848844,w:"D",ev:18},Minnesota:{d:1120438,r:766476,t:2192640,w:"D",ev:10},Mississippi:{d:394022,r:439838,t:893857,w:"R",ev:7},Missouri:{d:1025935,r:890016,t:2158065,w:"D",ev:11},Montana:{d:167922,r:179652,t:407261,w:"R",ev:3},Nebraska:{d:236761,r:363467,t:677415,w:"R",ev:5},Nevada:{d:203974,r:199244,t:464279,w:"D",ev:4},"New Hampshire":{d:246214,r:196532,t:499175,w:"D",ev:4},"New Jersey":{d:1652329,r:1103078,t:3075807,w:"D",ev:15},"New Mexico":{d:273495,r:232751,t:556074,w:"D",ev:5},"New York":{d:3756177,r:1933492,t:6316129,w:"D",ev:33},"North Carolina":{d:1107849,r:1225938,t:2515807,w:"R",ev:14},"North Dakota":{d:106905,r:125050,t:266411,w:"R",ev:3},Ohio:{d:2148222,r:1859883,t:4534434,w:"D",ev:21},Oklahoma:{d:488105,r:582315,t:1206713,w:"R",ev:8},Oregon:{d:649641,r:538152,t:1377760,w:"D",ev:7},Pennsylvania:{d:2215819,r:1801169,t:4506118,w:"D",ev:23},"Rhode Island":{d:233050,r:104683,t:390284,w:"D",ev:4},"South Carolina":{d:506283,r:573458,t:1151689,w:"R",ev:8},"South Dakota":{d:139333,r:150543,t:323826,w:"R",ev:3},Tennessee:{d:909146,r:863530,t:1894105,w:"D",ev:11},Texas:{d:2459683,r:2736167,t:5611644,w:"R",ev:32},Utah:{d:221633,r:361911,t:665629,w:"R",ev:5},Vermont:{d:137894,r:80352,t:258449,w:"D",ev:3},Virginia:{d:1091060,r:1138350,t:2416642,w:"R",ev:13},Washington:{d:1123323,r:840712,t:2253837,w:"D",ev:11},"West Virginia":{d:327812,r:233946,t:636459,w:"D",ev:5},Wisconsin:{d:1071971,r:845029,t:2196169,w:"D",ev:11},Wyoming:{d:77934,r:105388,t:211571,w:"R",ev:3}}},
+1992:{dN:"Clinton",rN:"Bush",dEV:370,rEV:168,nat:{d:44909806,r:39104550,t:104425014},s:{Alabama:{d:690080,r:804283,t:1688060,w:"R",ev:9},Alaska:{d:78294,r:102000,t:258506,w:"R",ev:3},Arizona:{d:543050,r:572086,t:1486975,w:"R",ev:8},Arkansas:{d:505823,r:337324,t:950653,w:"D",ev:6},California:{d:5121325,r:3630574,t:11131721,w:"D",ev:54},Colorado:{d:629681,r:562850,t:1569180,w:"D",ev:8},Connecticut:{d:682318,r:578313,t:1616332,w:"D",ev:8},Delaware:{d:126054,r:102313,t:289735,w:"D",ev:3},"District of Columbia":{d:192619,r:20698,t:227572,w:"D",ev:3},Florida:{d:2071651,r:2173310,t:5314392,w:"R",ev:25},Georgia:{d:1008966,r:995252,t:2321125,w:"D",ev:13},Hawaii:{d:179310,r:136822,t:372842,w:"D",ev:4},Idaho:{d:137013,r:202645,t:482142,w:"R",ev:4},Illinois:{d:2453350,r:1734096,t:5050157,w:"D",ev:22},Indiana:{d:848420,r:989375,t:2305871,w:"R",ev:12},Iowa:{d:586353,r:504891,t:1354607,w:"D",ev:7},Kansas:{d:390434,r:449951,t:1157335,w:"R",ev:6},Kentucky:{d:665104,r:617178,t:1492900,w:"D",ev:8},Louisiana:{d:815971,r:733386,t:1790017,w:"D",ev:9},Maine:{d:263420,r:206504,t:679499,w:"D",ev:4},Maryland:{d:988571,r:707094,t:1985046,w:"D",ev:10},Massachusetts:{d:1318662,r:805049,t:2773700,w:"D",ev:12},Michigan:{d:1871182,r:1554940,t:4274673,w:"D",ev:18},Minnesota:{d:1020997,r:747841,t:2347948,w:"D",ev:10},Mississippi:{d:400258,r:487793,t:981793,w:"R",ev:7},Missouri:{d:1053873,r:811159,t:2391565,w:"D",ev:11},Montana:{d:154507,r:144207,t:410611,w:"D",ev:3},Nebraska:{d:216864,r:343678,t:737546,w:"R",ev:5},Nevada:{d:189148,r:175828,t:495614,w:"D",ev:4},"New Hampshire":{d:209040,r:202484,t:537943,w:"D",ev:4},"New Jersey":{d:1436206,r:1356865,t:3343594,w:"D",ev:15},"New Mexico":{d:261617,r:212824,t:569986,w:"D",ev:5},"New York":{d:3444450,r:2346649,t:6926925,w:"D",ev:33},"North Carolina":{d:1114042,r:1134661,t:2611850,w:"R",ev:14},"North Dakota":{d:99168,r:136244,t:308133,w:"R",ev:3},Ohio:{d:1984942,r:1894310,t:4939967,w:"D",ev:21},Oklahoma:{d:473066,r:592929,t:1390359,w:"R",ev:8},Oregon:{d:621314,r:475757,t:1462643,w:"D",ev:7},Pennsylvania:{d:2239164,r:1791841,t:4959810,w:"D",ev:23},"Rhode Island":{d:213299,r:131601,t:453477,w:"D",ev:4},"South Carolina":{d:479514,r:577507,t:1202527,w:"R",ev:8},"South Dakota":{d:124888,r:136718,t:336254,w:"R",ev:3},Tennessee:{d:933521,r:841300,t:1982638,w:"D",ev:11},Texas:{d:2281815,r:2496071,t:6154018,w:"R",ev:32},Utah:{d:183429,r:322632,t:743999,w:"R",ev:5},Vermont:{d:133592,r:88122,t:289701,w:"D",ev:3},Virginia:{d:1038650,r:1150517,t:2558665,w:"R",ev:13},Washington:{d:993037,r:731234,t:2288230,w:"D",ev:11},"West Virginia":{d:331001,r:241974,t:683762,w:"D",ev:5},Wisconsin:{d:1041066,r:930855,t:2531114,w:"D",ev:11},Wyoming:{d:68160,r:79347,t:200598,w:"R",ev:3}}},
+1988:{dN:"Dukakis",rN:"Bush",dEV:111,rEV:426,nat:{d:41809074,r:48886097,t:91594809},s:{Alabama:{d:549506,r:815576,t:1378476,w:"R",ev:9},Alaska:{d:72584,r:119251,t:200116,w:"R",ev:3},Arizona:{d:454029,r:702541,t:1171873,w:"R",ev:7},Arkansas:{d:349237,r:466578,t:827738,w:"R",ev:6},California:{d:4702233,r:5054917,t:9887065,w:"R",ev:47},Colorado:{d:621453,r:728177,t:1372394,w:"R",ev:8},Connecticut:{d:676584,r:750241,t:1443394,w:"R",ev:8},Delaware:{d:108647,r:139639,t:249891,w:"R",ev:3},"District of Columbia":{d:159407,r:27590,t:192877,w:"D",ev:3},Florida:{d:1656701,r:2618885,t:4302313,w:"R",ev:21},Georgia:{d:714792,r:1081331,t:1809672,w:"R",ev:12},Hawaii:{d:192364,r:158625,t:354461,w:"D",ev:4},Idaho:{d:147272,r:253881,t:408968,w:"R",ev:4},Illinois:{d:2215940,r:2310939,t:4559120,w:"R",ev:24},Indiana:{d:860643,r:1297763,t:2168621,w:"R",ev:12},Iowa:{d:670557,r:545355,t:1225614,w:"D",ev:8},Kansas:{d:422636,r:554049,t:993044,w:"R",ev:7},Kentucky:{d:580368,r:734281,t:1322517,w:"R",ev:9},Louisiana:{d:717460,r:883702,t:1628202,w:"R",ev:10},Maine:{d:243569,r:307131,t:555035,w:"R",ev:4},Maryland:{d:826304,r:876167,t:1714358,w:"R",ev:10},Massachusetts:{d:1401415,r:1194635,t:2632805,w:"D",ev:13},Michigan:{d:1675783,r:1965486,t:3669163,w:"R",ev:20},Minnesota:{d:1109471,r:962337,t:2096790,w:"D",ev:10},Mississippi:{d:363921,r:557890,t:931527,w:"R",ev:7},Missouri:{d:1001619,r:1084953,t:2093156,w:"R",ev:11},Montana:{d:168936,r:190412,t:365674,w:"R",ev:4},Nebraska:{d:259235,r:397956,t:661465,w:"R",ev:5},Nevada:{d:132738,r:206040,t:350067,w:"R",ev:4},"New Hampshire":{d:163696,r:281537,t:451074,w:"R",ev:4},"New Jersey":{d:1320352,r:1743192,t:3099553,w:"R",ev:16},"New Mexico":{d:244497,r:270341,t:521287,w:"R",ev:5},"New York":{d:3347882,r:3081871,t:6485683,w:"D",ev:36},"North Carolina":{d:890167,r:1237258,t:2134370,w:"R",ev:13},"North Dakota":{d:127739,r:166559,t:297261,w:"R",ev:3},Ohio:{d:1939629,r:2416549,t:4393699,w:"R",ev:23},Oklahoma:{d:483423,r:678367,t:1171036,w:"R",ev:8},Oregon:{d:616206,r:560126,t:1201694,w:"D",ev:7},Pennsylvania:{d:2194944,r:2300087,t:4536251,w:"R",ev:25},"Rhode Island":{d:225123,r:177761,t:404620,w:"D",ev:4},"South Carolina":{d:370554,r:606443,t:986009,w:"R",ev:8},"South Dakota":{d:145560,r:165415,t:312991,w:"R",ev:3},Tennessee:{d:679794,r:947233,t:1636250,w:"R",ev:11},Texas:{d:2352748,r:3036829,t:5427410,w:"R",ev:29},Utah:{d:207352,r:428442,t:647008,w:"R",ev:5},Vermont:{d:115775,r:124331,t:243328,w:"R",ev:3},Virginia:{d:859799,r:1309162,t:2191609,w:"R",ev:12},Washington:{d:933516,r:903835,t:1865253,w:"D",ev:10},"West Virginia":{d:341016,r:310065,t:653311,w:"D",ev:6},Wisconsin:{d:1126794,r:1047499,t:2191608,w:"D",ev:11},Wyoming:{d:67113,r:106867,t:176551,w:"R",ev:3}}},
+1984:{dN:"Mondale",rN:"Reagan",dEV:13,rEV:525,nat:{d:37577352,r:54455472,t:92652842},s:{Alabama:{d:551899,r:872849,t:1441713,w:"R",ev:9},Alaska:{d:62007,r:138377,t:207605,w:"R",ev:3},Arizona:{d:333854,r:681416,t:1025897,w:"R",ev:7},Arkansas:{d:338646,r:534774,t:884406,w:"R",ev:6},California:{d:3922519,r:5467009,t:9505520,w:"R",ev:47},Colorado:{d:454975,r:821817,t:1295380,w:"R",ev:8},Connecticut:{d:569597,r:890877,t:1466900,w:"R",ev:8},Delaware:{d:101656,r:152190,t:254572,w:"R",ev:3},"District of Columbia":{d:180408,r:29009,t:211288,w:"D",ev:3},Florida:{d:1448816,r:2730350,t:4180051,w:"R",ev:21},Georgia:{d:706628,r:1068722,t:1776120,w:"R",ev:12},Hawaii:{d:147154,r:185050,t:335846,w:"R",ev:4},Idaho:{d:108510,r:297523,t:411144,w:"R",ev:4},Illinois:{d:2086499,r:2707103,t:4819088,w:"R",ev:24},Indiana:{d:814659,r:1377230,t:2233069,w:"R",ev:12},Iowa:{d:605620,r:703088,t:1319805,w:"R",ev:8},Kansas:{d:333149,r:677296,t:1021991,w:"R",ev:7},Kentucky:{d:539539,r:815345,t:1369345,w:"R",ev:9},Louisiana:{d:651586,r:1037299,t:1706822,w:"R",ev:10},Maine:{d:214515,r:336500,t:553144,w:"R",ev:4},Maryland:{d:787935,r:1014690,t:1675873,w:"R",ev:10},Massachusetts:{d:1239606,r:1310936,t:2559453,w:"R",ev:13},Michigan:{d:1529638,r:2251571,t:3801658,w:"R",ev:20},Minnesota:{d:1036364,r:1032603,t:2084449,w:"D",ev:10},Mississippi:{d:352192,r:582377,t:941104,w:"R",ev:7},Missouri:{d:848583,r:1274188,t:2122783,w:"R",ev:11},Montana:{d:146742,r:232450,t:384377,w:"R",ev:4},Nebraska:{d:187866,r:460650,t:652090,w:"R",ev:5},Nevada:{d:91655,r:188770,t:286667,w:"R",ev:4},"New Hampshire":{d:120395,r:267051,t:389066,w:"R",ev:4},"New Jersey":{d:1261323,r:1933630,t:3217862,w:"R",ev:16},"New Mexico":{d:201769,r:307101,t:514370,w:"R",ev:5},"New York":{d:3119609,r:3664763,t:6806810,w:"R",ev:36},"North Carolina":{d:824287,r:1346481,t:2175361,w:"R",ev:13},"North Dakota":{d:104429,r:200336,t:308971,w:"R",ev:3},Ohio:{d:1825440,r:2678560,t:4547619,w:"R",ev:23},Oklahoma:{d:385080,r:861530,t:1255676,w:"R",ev:8},Oregon:{d:536479,r:685700,t:1226527,w:"R",ev:7},Pennsylvania:{d:2228131,r:2584323,t:4844903,w:"R",ev:25},"Rhode Island":{d:197106,r:212080,t:410492,w:"R",ev:4},"South Carolina":{d:344459,r:615539,t:968529,w:"R",ev:8},"South Dakota":{d:116113,r:200267,t:317867,w:"R",ev:3},Tennessee:{d:711714,r:990212,t:1711994,w:"R",ev:11},Texas:{d:1949276,r:3433428,t:5397571,w:"R",ev:29},Utah:{d:155369,r:469105,t:629656,w:"R",ev:5},Vermont:{d:95730,r:135865,t:234561,w:"R",ev:3},Virginia:{d:796250,r:1337078,t:2146635,w:"R",ev:12},Washington:{d:798352,r:1051670,t:1883920,w:"R",ev:10},"West Virginia":{d:328125,r:405483,t:735742,w:"R",ev:6},Wisconsin:{d:995740,r:1198584,t:2211689,w:"R",ev:11},Wyoming:{d:53370,r:133241,t:188968,w:"R",ev:3}}},
+1980:{dN:"Carter",rN:"Reagan",dEV:49,rEV:489,nat:{d:35480115,r:43903230,t:86515221},s:{Alabama:{d:636730,r:654192,t:1341929,w:"R",ev:9},Alaska:{d:41842,r:86112,t:158445,w:"R",ev:3},Arizona:{d:246843,r:529688,t:873945,w:"R",ev:6},Arkansas:{d:398041,r:403164,t:837582,w:"R",ev:6},California:{d:3083661,r:4524858,t:8587060,w:"R",ev:45},Colorado:{d:367973,r:652264,t:1184415,w:"R",ev:7},Connecticut:{d:541732,r:677210,t:1406285,w:"R",ev:8},Delaware:{d:105754,r:111252,t:235900,w:"R",ev:3},"District of Columbia":{d:130231,r:23313,t:175237,w:"D",ev:3},Florida:{d:1419475,r:2046951,t:3686984,w:"R",ev:17},Georgia:{d:890733,r:654168,t:1596695,w:"D",ev:12},Hawaii:{d:135879,r:130112,t:303287,w:"D",ev:4},Idaho:{d:110192,r:290699,t:437431,w:"R",ev:4},Illinois:{d:1981413,r:2358049,t:4749731,w:"R",ev:26},Indiana:{d:844197,r:1255656,t:2242033,w:"R",ev:13},Iowa:{d:508672,r:676026,t:1317661,w:"R",ev:8},Kansas:{d:326150,r:566812,t:979795,w:"R",ev:7},Kentucky:{d:616417,r:635274,t:1294627,w:"R",ev:9},Louisiana:{d:708453,r:792853,t:1548035,w:"R",ev:10},Maine:{d:220974,r:238522,t:523011,w:"R",ev:4},Maryland:{d:726161,r:680606,t:1540496,w:"D",ev:10},Massachusetts:{d:1053802,r:1057631,t:2524298,w:"R",ev:14},Michigan:{d:1661532,r:1915225,t:4392582,w:"R",ev:21},Minnesota:{d:954174,r:873241,t:2051980,w:"D",ev:10},Mississippi:{d:429281,r:441089,t:952062,w:"R",ev:7},Missouri:{d:931182,r:1074181,t:2099824,w:"R",ev:12},Montana:{d:118032,r:206814,t:363952,w:"R",ev:4},Nebraska:{d:166851,r:419937,t:640854,w:"R",ev:5},Nevada:{d:66666,r:155017,t:247885,w:"R",ev:3},"New Hampshire":{d:108864,r:221705,t:383990,w:"R",ev:4},"New Jersey":{d:1147364,r:1546557,t:2975684,w:"R",ev:17},"New Mexico":{d:167826,r:250779,t:456971,w:"R",ev:4},"New York":{d:2728372,r:2893831,t:6201959,w:"R",ev:41},"North Carolina":{d:875635,r:915018,t:1855833,w:"R",ev:13},"North Dakota":{d:79189,r:193695,t:301545,w:"R",ev:3},Ohio:{d:1752414,r:2206545,t:4283603,w:"R",ev:25},Oklahoma:{d:402026,r:695570,t:1149013,w:"R",ev:8},Oregon:{d:456890,r:571044,t:1181516,w:"R",ev:6},Pennsylvania:{d:1937540,r:2261872,t:4561501,w:"R",ev:27},"Rhode Island":{d:198342,r:154793,t:416072,w:"D",ev:4},"South Carolina":{d:427560,r:441207,t:894071,w:"R",ev:8},"South Dakota":{d:103855,r:198343,t:327703,w:"R",ev:4},Tennessee:{d:783051,r:787761,t:1617616,w:"R",ev:10},Texas:{d:1881147,r:2510705,t:4541636,w:"R",ev:26},Utah:{d:124266,r:439687,t:604222,w:"R",ev:4},Vermont:{d:81891,r:94598,t:213299,w:"R",ev:3},Virginia:{d:752174,r:989609,t:1866032,w:"R",ev:12},Washington:{d:650193,r:865244,t:1742394,w:"R",ev:9},"West Virginia":{d:367462,r:334206,t:737715,w:"D",ev:6},Wisconsin:{d:981584,r:1088845,t:2273221,w:"R",ev:11},Wyoming:{d:49427,r:110700,t:176713,w:"R",ev:3}}}
+};
+
+const FACTS=[
+  {tags:['close','swing_win','swing_loss'],tag:"voting",q:"Due to the Electoral College, a vote in Wyoming is worth ~3.7× a vote in California.",b:`Wyoming has roughly 192,000 presidential voters per electoral vote. California has roughly 720,000. Each Wyoming vote carries <b>~3.7× the electoral weight</b>. This structure produced two presidents in the last 24 years (2000, 2016) who won the Electoral College while losing the national popular vote.`,src:"Census data & electoral apportionment, 2020. National Archives."},
+  {tags:['blowout_loss','other'],tag:"money",q:"In 2024, the top 1% of donors provided 99% of all super PAC money.",b:`According to OpenSecrets, the top 1% of donors accounted for <b>99.1% of all super PAC money</b>, with the top 100 donors alone covering 63.1%. Total outside spending hit <b>$4.5 billion</b>. As Carter put it in 2015: <b>"Now it's just an oligarchy, with unlimited political bribery."</b>`,src:"OpenSecrets / RepresentUs, Oct 2024. Carter interview, Thom Hartmann Program, July 2015."},
+  {tags:['pop_mismatch'],tag:"founders",q:"Washington warned that parties would become 'potent engines' of destruction.",b:`In his 1796 Farewell Address, Washington warned that factions would let <b>"a small but artful and enterprising minority"</b> seize power and pit citizens against each other. The EC/popular vote split you just saw is a direct consequence of the winner-take-all two-party system he warned against.`,src:"Washington's Farewell Address, September 17, 1796."},
+  {tags:['swing_win','national_win'],tag:"structural",q:"Congress hasn't declared war since 1942 — yet the U.S. has fought 100+ conflicts since.",b:`The Constitution grants <b>Congress</b> the power to declare war. The last declaration was in 1942. Since then: Korea, Vietnam, Grenada, Panama, Kuwait, Somalia, Afghanistan, Iraq, Libya, Syria and dozens more — <b>all without a formal declaration</b>.`,src:"Congressional Research Service. Constitution, Article I §8."},
+  {tags:['blowout_loss','national_loss'],tag:"cia",q:"The CIA has been involved in at least 72 documented foreign government overthrows.",b:`Confirmed operations include Iran (1953), Guatemala (1954), Congo (1960), Chile (1973), and Nicaragua (1980s). The <b>1953 Iranian coup</b> toppled an elected Prime Minister after he nationalized oil — producing the Shah regime, then the 1979 Islamic Revolution. Declassified in 2013.`,src:"O'Rourke, Covert Regime Change (Cornell, 2018). CIA CREST archive, declassified 2013."},
+  {tags:['swing_loss','national_loss'],tag:"wars",q:"A majority of Americans opposed the Iraq War before it began. The invasion happened anyway.",b:`Early 2003 polls showed <b>54–63% of Americans</b> opposing a unilateral invasion. On Feb 15, 2003, <b>10–15 million people</b> marched worldwide — the largest protest in recorded history. No WMDs were found. Over <b>4,500 U.S. troops</b> and an estimated <b>200,000+ Iraqi civilians</b> died.`,src:"Gallup/Pew, Jan–Mar 2003. Brown University Costs of War Project."},
+  {tags:['comfortable_win'],tag:"money",q:"Dark money hit a record $1.9 billion in 2024 — from donors whose identities are legally hidden.",b:`"Dark money" nonprofits gave <b>$1.3 billion to super PACs</b> in 2024 — more than the prior two cycles combined. The loophole: a dark money group writes the check, the PAC discloses the group's name, the group never reveals its own backers.`,src:"Brennan Center for Justice, 2024. Pew Research Center polling."},
+  {tags:['national_win','close'],tag:"warnings",q:"Eisenhower warned that the 'military-industrial complex' threatened democratic governance.",b:`On January 17, 1961, the Supreme Allied Commander of WWII warned Americans to <b>"guard against the acquisition of unwarranted influence"</b> by the permanent arms industry. U.S. defense spending in 2023 exceeded <b>$858 billion</b> — more than the next ten countries combined.`,src:"Eisenhower Farewell Address, Jan 17, 1961. SIPRI, 2023."},
+  {tags:['other','blowout_loss'],tag:"voting",q:"In 2020, Biden won with 81M votes — out of 258M eligible voters.",b:`Biden's record 81 million votes represented about <b>31% of eligible voters</b>. Roughly <b>80 million eligible Americans did not vote</b>. The U.S. consistently ranks among the lowest in turnout among wealthy democracies.`,src:"U.S. Elections Project, 2020. Pew Research Center international comparisons."},
+  {tags:['swing_win','national_loss'],tag:"cia",q:"The U.S. overthrew Chile's elected president in 1973 — with Nixon's direct approval.",b:`Salvador Allende was elected in 1970. Nixon ordered the CIA to <b>"make the economy scream."</b> When that failed, the U.S. backed Pinochet's coup on September 11, 1973. Over <b>3,000 people</b> were killed, 40,000 detained. Declassified transcripts confirm direct involvement.`,src:"Church Committee, 1975. Declassified Nixon-Kissinger transcripts. Human Rights Watch."},
+];
+
+const TAG_META={founders:{l:'Founders',c:'tf'},warnings:{l:'Presidential warning',c:'tw'},cia:{l:'Covert ops',c:'tc'},wars:{l:'Wars & opinion',c:'twa'},voting:{l:'Voting & rep.',c:'tv'},structural:{l:'Structural',c:'ts'},money:{l:'Super PACs',c:'tm'}};
+
+function fmt(n){
+  if(!n&&n!==0)return'N/A';
+  if(n>=1000000)return(n/1000000).toFixed(2).replace(/\.?0+$/,'')+'M';
+  if(n>=1000)return Math.round(n/1000)+'k';
+  return n.toLocaleString();
+}
+function pct(a,b){return b?(100*a/b).toFixed(1):0}
+
+let mv=null;
+function sv(v){
+  mv=v;
+  ['dem','rep','oth'].forEach(x=>document.getElementById('b'+x[0]).classList.toggle('sel',x===v));
+  const yr=parseInt(document.getElementById('yr').value);
+  if(D[yr]){document.getElementById('dl').textContent=D[yr].dN;document.getElementById('rl').textContent=D[yr].rN;}
+}
+document.getElementById('yr').addEventListener('change',()=>{
+  const yr=parseInt(document.getElementById('yr').value);
+  if(D[yr]){document.getElementById('dl').textContent=D[yr].dN;document.getElementById('rl').textContent=D[yr].rN;}
+});
+
+function go(){
+  const state=document.getElementById('st').value;
+  const year=parseInt(document.getElementById('yr').value);
+  if(!state||!year){alert('Please select a state and year.');return;}
+  if(!mv){alert('Please select who you voted for.');return;}
+  const el=D[year];const sd=el.s[state];
+  if(!sd){alert('Data not available.');return;}
+  const{d,r,t,w,ev}=sd;
+  const dW=w==='D';
+  const margin=Math.abs(d-r);
+  const mPct=margin/t*100;
+  const winner=dW?el.dN:el.rN;
+  const dPct=parseFloat(pct(d,t));
+  const rPct=parseFloat(pct(r,t));
+  const oPct=Math.max(0,parseFloat((100-dPct-rPct).toFixed(1)));
+  const flip=Math.ceil(margin/2);
+  const uName=mv==='dem'?el.dN:mv==='rep'?el.rN:null;
+  const uSW=mv==='dem'?dW:mv==='rep'?!dW:null;
+  const uNW=mv==='dem'?(el.dEV>el.rEV):mv==='rep'?(el.rEV>el.dEV):null;
+  const natW=el.dEV>el.rEV?el.dN:el.rN;
+  const natWEV=Math.max(el.dEV,el.rEV);
+  const natLEV=Math.min(el.dEV,el.rEV);
+  const stToNat=dW===(el.dEV>el.rEV);
+  const winWoSt=el.dEV>el.rEV?(el.dEV-ev>269):(el.rEV-ev>269);
+  const stNeeded=!winWoSt;
+  const popMis=el.dEV>el.rEV?(el.nat.r>el.nat.d):(el.nat.d>el.nat.r);
+
+  let ti,su,cl,ic;
+  if(mv==='oth'){
+    cl='n';ic='—';ti='You sat this one out';
+    su=`${winner} won ${state} by ${mPct.toFixed(2)}%. ${natW} won the presidency.`;
+  } else if(uSW){
+    cl=mPct<8?'g':'a';ic='✓';
+    ti=mPct<0.5?`Your vote was decisive in ${state}`:mPct<2?`Your vote helped carry ${state}`:`Your candidate won ${state}`;
+    su=uNW?`${uName} also won the presidency ${natWEV}–${natLEV}.`:`Despite winning ${state}, ${uName} lost the presidency ${natLEV}–${natWEV}.`;
+  } else {
+    cl=mPct<2?'a':'r';ic='○';
+    ti=mPct<0.5?`Your side came agonizingly close in ${state}`:mPct<2?`Your candidate narrowly lost ${state}`:`Your candidate lost ${state}${mPct>=10?' by a wide margin':''}`;
+    su=uNW?`But ${uName} won the presidency ${natWEV}–${natLEV}.`:`And ${uName} lost the presidency ${natLEV}–${natWEV}.`;
+  }
+  document.getElementById('vh').className='vh '+cl;
+  const vi=document.getElementById('vi');vi.className='vicon '+cl;vi.textContent=ic;
+  document.getElementById('vt').className='vtitle '+cl;document.getElementById('vt').textContent=ti;
+  document.getElementById('vs').className='vsub '+cl;document.getElementById('vs').textContent=su;
+
+  let ch=[];
+  if(mv!=='oth'){
+    const uV=mv==='dem'?d:r;
+    ch.push(uSW
+      ?{c:'pos',i:'✓',t:`You voted for <b>${uName}</b>, who won ${state} with ${pct(uV,t)}% — a margin of ${fmt(margin)} votes (${mPct.toFixed(2)}%).`}
+      :{c:'neg',i:'○',t:`You voted for <b>${uName}</b>, who lost ${state} by ${fmt(margin)} votes (${mPct.toFixed(2)}%). ${fmt(flip)} more votes would have flipped the state's ${ev} electoral votes.`}
+    );
+    if(uSW&&uNW&&stNeeded){
+      ch.push({c:'pos',i:'✓',t:`<b>${state}'s ${ev} electoral votes were necessary.</b> Without them, ${natW} would have fallen below 270.`});
+    } else if(uSW&&!uNW){
+      ch.push({c:'neg',i:'○',t:`${uName} lost the presidency ${natLEV}–${natWEV}. Winning ${state} wasn't enough.`});
+    } else if(!uSW&&uNW){
+      ch.push({c:'cau',i:'~',t:`${uName} won the presidency ${natWEV}–${natLEV} without ${state}. The loss here didn't change the national outcome.`});
+    } else if(!uSW&&!uNW){
+      ch.push({c:'neg',i:'○',t:`${uName} also lost the presidency ${natLEV}–${natWEV}. The state loss was part of a broader losing map.`});
+    }
+    if(popMis) ch.push({c:'cau',i:'!',t:`<b>${natW} won the Electoral College but lost the national popular vote.</b> The candidate with more total votes nationwide did not become president.`});
+    if(!uSW&&mPct>15) ch.push({c:'neu',i:'→',t:`Your vote still counts toward the <b>national popular vote</b>, influences future campaign investment in ${state}, and affects down-ballot races.`});
+  } else {
+    ch.push({c:'neu',i:'○',t:`<b>${winner}</b> won ${state} with a ${mPct.toFixed(2)}% margin (${fmt(margin)} votes). ${natW} won the presidency ${natWEV}–${natLEV}.`});
+    if(popMis) ch.push({c:'cau',i:'!',t:`${natW} won the Electoral College but lost the popular vote — votes translate very differently depending on your state.`});
+  }
+
+  let vbCls,vbLabel,vbText;
+  if(mv==='oth'){
+    vbCls='none';vbLabel='Verdict';vbText='You didn\'t vote.';
+  } else if(uSW&&uNW&&stNeeded){
+    vbCls='win';vbLabel='Your vote mattered';vbText='Yes — your state was decisive.';
+  } else if(uSW&&uNW&&!stNeeded){
+    vbCls='draw';vbLabel='Your vote mattered, partially';vbText='Your side won, but not because of your state.';
+  } else if(uSW&&!uNW){
+    vbCls='loss';vbLabel='Your vote didn\'t change the outcome';vbText='Your state voted right — your candidate still lost.';
+  } else if(!uSW&&uNW){
+    vbCls='draw';vbLabel='Your candidate won anyway';vbText='Your side won the presidency without your state.';
+  } else {
+    vbCls='loss';vbLabel='Your vote didn\'t change the outcome';vbText='Your candidate lost your state and the presidency.';
+  }
+
+  document.getElementById('vb').innerHTML=`
+    <div class="chain">${ch.map(c=>`<div class="crow ${c.c}"><em class="ci">${c.i}</em><div>${c.t}</div></div>`).join('')}</div>
+    <div class="verdict-banner ${vbCls}">
+      <div class="verdict-label ${vbCls}">${vbLabel}</div>
+      <div class="verdict-text ${vbCls}">${vbText}</div>
+    </div>
+    <div class="sgrid">
+      <div class="sc"><div class="sl">State margin</div><div class="sv">${mPct.toFixed(2)}%</div><div class="ss">${fmt(margin)} votes</div></div>
+      <div class="sc"><div class="sl">Flip needed</div><div class="sv">${fmt(flip)}</div><div class="ss">to reverse ${state}</div></div>
+      <div class="sc"><div class="sl">State's EV</div><div class="sv">${ev}</div><div class="ss">${stNeeded&&stToNat?'decisive':'non-decisive'}</div></div>
+    </div>
+    <div class="bwrap">
+      <div class="blabels"><span style="color:#185FA5">${el.dN} ${dPct}%</span><span style="color:#993C1D">${el.rN} ${rPct}%</span></div>
+      <div class="btrack"><div class="seg-d" style="width:${dPct}%"></div><div class="seg-o" style="width:${oPct}%"></div><div class="seg-r" style="width:${rPct}%"></div></div>
+      <span class="pill ${dW?'d':'r'}">${winner} +${mPct.toFixed(2)}%</span>
+    </div>`;
+
+  const evDp=(el.dEV/538*100).toFixed(1);
+  const evRp=(el.rEV/538*100).toFixed(1);
+  const pDp=pct(el.nat.d,el.nat.t);const pRp=pct(el.nat.r,el.nat.t);
+  document.getElementById('nc').innerHTML=`
+    <div class="stitle">National picture — ${year}</div>
+    <div class="sgrid" style="margin-bottom:1rem">
+      <div class="sc"><div class="sl">EC winner</div><div class="sv" style="font-size:14px">${natW}</div><div class="ss">${natWEV} of 538 EV</div></div>
+      <div class="sc"><div class="sl">Popular vote</div><div class="sv" style="font-size:14px">${popMis?'Split':'Aligned'}</div><div class="ss">${popMis?'EC ≠ popular':'EC matched popular'}</div></div>
+      <div class="sc"><div class="sl">${state}</div><div class="sv" style="font-size:13px">${stNeeded&&stToNat?'Decisive':'Non-decisive'}</div><div class="ss">${ev} EV — ${stNeeded&&stToNat?'winner needed them':'winner had EV to spare'}</div></div>
+    </div>
+    <div class="ecbar"><div class="ecd" style="width:${evDp}%">${el.dEV>=50?el.dEV:''}</div><div class="ecr" style="width:${evRp}%">${el.rEV>=50?el.rEV:''}</div></div>
+    <div class="ecrow"><span style="color:#185FA5">${el.dN}: <b>${el.dEV} EV</b></span><span style="color:#993C1D">${el.rN}: <b>${el.rEV} EV</b></span></div>
+    <div class="divider"></div>
+    <div class="bwrap" style="margin:0">
+      <div class="blabels"><span style="color:#185FA5">${el.dN} ${pDp}% popular</span><span style="color:#993C1D">${el.rN} ${pRp}% popular</span></div>
+      <div class="btrack"><div class="seg-d" style="width:${pDp}%"></div><div class="seg-r" style="width:${pRp}%"></div></div>
+    </div>`;
+
+  const ctx=[];
+  if(mv==='oth') ctx.push('other');
+  if(popMis) ctx.push('pop_mismatch');
+  if(mPct<3) ctx.push('close');
+  if(mPct>=10) ctx.push('blowout_loss');
+  if(uSW&&mPct<6) ctx.push('swing_win');
+  if(uSW===false&&mPct<6) ctx.push('swing_loss');
+  if(uSW&&mPct>=6) ctx.push('comfortable_win');
+  if(uNW) ctx.push('national_win');
+  if(uNW===false) ctx.push('national_loss');
+  const pool=FACTS.filter(f=>f.tags.some(x=>ctx.includes(x)));
+  const fact=(pool.length?pool:FACTS)[Math.floor(Math.random()*(pool.length||FACTS.length))];
+  const tm=TAG_META[fact.tag]||{l:fact.tag,c:'ts'};
+  document.getElementById('dyk').innerHTML=`
+    <div class="dykhd"><span class="dykeb">Fun Fact</span><span class="dyktag ${tm.c}">${tm.l}</span></div>
+    <div class="dykbd"><div class="dykq">${fact.q}</div><div class="dykt">${fact.b}</div><div class="dyksrc">${fact.src}</div></div>`;
+
+  document.getElementById('res').style.display='block';
+  document.getElementById('res').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+</script>
+</body>
+</html>
